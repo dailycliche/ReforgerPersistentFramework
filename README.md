@@ -1,117 +1,93 @@
-<div align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" width="400" srcset="https://github.com/Arkensor/EnfusionDatabaseFramework/assets/8494013/4ae8ba7f-e129-4e5e-b032-44166597de58">
-  <img alt="Everon Life" width="400" src="https://github.com/Arkensor/EnfusionDatabaseFramework/assets/8494013/6bad6033-f07d-42f3-a485-553d8d8b7d76">
-</picture>
+# Reforger Persistent Framework (RPF)
 
-[![Releases](https://img.shields.io/github/v/release/Arkensor/EnfusionDatabaseFramework?style=flat-square)](https://github.com/Arkensor/EnfusionDatabaseFramework/releases)
-[![Arma Reforger Workshop](https://img.shields.io/badge/Workshop-5D6EA74A94173EDF-blue?style=flat-square)](https://reforger.armaplatform.com/workshop/5D6EA74A94173EDF)
-[![License MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
-</div>
+**RPF** is a modular, developer-friendly persistence system for *Arma Reforger*, designed to allow servers to **save and restore game state across restarts**. Whether you're running large-scale monthly campaigns or immersive roleplay scenarios, RPF provides a stable and extensible backend for world persistence.
 
-# Enfusion Database Framework
+---
 
-> **Info**
-> This mod is permitted to be used for Make Arma Not War 2025 submissions and commercial use on monetized servers
+## ✅ Core Goals
 
-> **Warning**
-> This framework is still in **BETA**. Until version 1.0.0 there is no backward compatibility guarantee! Expect some bugs/performance issues and function signature updates until then. Feedback via [issue](https://github.com/Arkensor/EnfusionDatabaseFramework/issues) or [discussion](https://github.com/Arkensor/EnfusionDatabaseFramework/discussions) is welcome.
+- **Modular Design** – Enable only what your server needs: player data, vehicles, zones, etc.
+- **Community Friendly** – Open source (MIT), well-documented, and built for collaboration.
+- **Minimal Dependencies** – Server-side only, lightweight by design.
+- **Open Source** – Public repo with versioned commits and release tags.
+- **Future Proof** – Built on a versioned format to support upgrades and extensions.
 
-**A database framework to connect the Enfusion engine with SQL-, document- and local file databases.**
+---
 
-> **Note**
-> Are you trying to persist the entire world state and not just a few self scripted db entites? Consider using [EnfusionPersistenceFramework](https://github.com/Arkensor/EnfusionPersistenceFramework) which is built on top of this project.
+## 📦 Core Modules
 
-## 🚀 Features
-- ✅ Easy to setup your DB entities with the provided base classes
-- ✅ Built-in [GUID](https://en.wikipedia.org/wiki/GUID) generation for DB entities to avoid expensive roundtrips to the database
-- ✅ Powerful query builder to find DB entities by complex conditions
-- ✅ Sync (blocking) and Async (non-blocking) APIs for adding/updating, finding, and removing DB entities
-- ✅ Pagination and result sorting by nested properties 
-- ✅ Optional repository pattern for easy strong typed results and re-useable queries.
-- 🚧 Migrations between storage backends e.g. `JsonFile` <-> `Http:MySQL`
+| Module            | Description                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| `RPF_Core`        | JSON save/load engine, mission event hooks, and auto-backup system          |
+| `RPF_PlayerData`  | Persists UID, faction, role, kills, deaths, and rank                        |
+| `RPF_Zones`       | Captures territory ownership, control states, and capture progress          |
+| `RPF_Vehicles`    | Saves location, damage state, fuel level, and ownership                     |
+| `RPF_Structures`  | Restores player-built FOBs, fortifications, static structures               |
+| `RPF_Campaign`    | Tracks global war status (weeks, victory points, strategic shifts)          |
 
-### Drivers
-- ✅ [`InMemory`](docs/drivers/in-memory.md) for unit testing purposes
-- ✅ [`JsonFile`](docs/drivers/json-file.md) local `.json` files for workbench development and small data volumes
-- ✅ [`BinaryFile`](docs/drivers/binary-file.md) local `.bin` files, same purpose as JSON but much smaller in filesize.
-- 🚧 `BIBackend` local/cloud synced `.bin` files stored in the Bohemia Interactive session backend.
-- 🚧 `Http` a web API proxy to other external storage services such as SQL and document databases.
-    - ✅ Document Databases [`MongoDB`](docs/drivers/proxy-mongodb.md)
-    - 🚧 SQL Databases `SQLite`, `MySQL`, `PostgreSQL`
+Each module supports interval-based saving and consistent JSON formatting. Designed for standalone use or seamless integration into larger frameworks.
 
-## 📖 Documentation
-Detailed information on the individual classes and best practices can be found [here](docs/index.md).
+---
 
-## ⚡ Quick start
-```cs
-[EDF_DbName.Automatic()]
-class TAG_MyPersistentInfo : EDF_DbEntity
-{
-    float m_fNumber;
-    string m_sText;
+## 🔧 Technical Stack
 
-    //------------------------------------------------------------------------------------------------
-    //! Db entities can not have a constructor with parameters, this is a limitation of the engine.
-    //! Consult the docs for more info on this.
-    static TAG_MyPersistentInfo Create(float number, string text)
-    {
-        TAG_MyPersistentInfo instance();
-        instance.m_fNumber = number;
-        instance.m_sText = text;
-        return instance;
-    }
-};
+- **Language**: Enfusion Script (Bohemia’s C++-like scripting language)
+- **Persistence**: JSON-based (future support for binary or remote backends)
+- **Framework**: Built on [Enfusion Database Framework (EDF)](https://github.com/Arkensor/EnfusionDatabaseFramework) by [Arkensor](https://github.com/Arkensor)
+- **Configurable**: Fully tunable via `.json` and script-side parameters
 
-class EDF_QuickstartAction : ScriptedUserAction
-{
-    //------------------------------------------------------------------------------------------------
-    override void PerformAction(IEntity pOwnerEntity, IEntity pUserEntity)
-    {
-        // Get the connection info as an attribute or parse it from CLI params etc.
-        EDF_JsonFileDbConnectionInfo connectInfo();
-        connectInfo.m_sDatabaseName = "MyJsonDatabase";
+---
 
-        // Get a db context instance and save it somewhere to re-use in e.g. a singleton
-        EDF_DbContext dbContext = EDF_DbContext.Create(connectInfo);
+## 📌 Use Cases
 
-        // For convenience interact with the DB context through a repository
-        EDF_DbRepository<TAG_MyPersistentInfo> repository = EDF_DbEntityHelper<TAG_MyPersistentInfo>.GetRepository(dbContext);
+- **WCS/ACE-style Campaigns** – Persistent zones, battles, and supply lines across weeks
+- **RP Servers** – Character stats, factions, progression retained between sessions
+- **Survival Modes** – Loot, structures, and base-building that persists across restarts
+- **Mod-Integrated Persistence** – Easily extendable for any mod needing save/load functionality
 
-        // Add some entries
-        repository.AddOrUpdateAsync(TAG_MyPersistentInfo.Create(13.37, "Hello"));
-        repository.AddOrUpdateAsync(TAG_MyPersistentInfo.Create(42.42, "World!"));
+---
 
-        // Now find hello
-        EDF_DbFindCondition condition = EDF_DbFind.Field("m_sText").Contains("Hello");
-        EDF_DbFindCallbackSingle<TAG_MyPersistentInfo> helloHandler(this, "FindHelloHandler");
-        repository.FindFirstAsync(condition, callback: helloHandler);
-    }
+## 🛠️ Milestones
 
-    protected void FindHelloHandler(EDF_EDbOperationStatusCode statusCode, TAG_MyPersistentInfo result)
-    {
-        PrintFormat("FindHelloHandler invoked! - StatusCode: %1",
-            typename.EnumToString(EDF_EDbOperationStatusCode, statusCode));
+- ✅ Design architecture & MIT licensing  
+- 🔄 RPF_Core + RPF_Zones MVP in progress  
+- 🔄 Test mission with save/load capability  
+- 🔄 Player role + faction persistence  
+- 🔄 Full repo documentation and mod.io integration  
+- 🔄 Vehicle, structure, and campaign state persistence  
+- 🔄 Support for forks, extensions, and modular contributions  
 
-        if (result)
-            PrintFormat("Result: %1(id: %2, number: %3, text: %4)",
-                result, result.GetId(), result.m_fNumber, result.m_sText)
-    }
-};
-```
-You should see this in your script console after executing the user action
-> FindHelloHandler invoked! - StatusCode: SUCCESS  
-> Result: TAG_MyPersistentInfo<0x0000020D41100670>(id: 646e0c40-0000-0000-32cd-65805811b000, number: 13.37, text: Hello) 
+---
 
-And in your profile find these two files
-- `profile/.db/MyJsonDatabase/MyPersistentInfos/646e0c40-0000-0000-32cd-65805811b000.json`
-- `profile/.db/MyJsonDatabase/MyPersistentInfos/646e0c40-0000-0001-1a8d-352051eea400.json`
+## 🤝 Why This Matters
 
-And inside `646e0c40-0000-0000-32cd-65805811b000.json`
-```json
-{
-    "m_sId": "646e0c40-0000-0000-32cd-65805811b000",
-    "m_fNumber": 13.36999,
-    "m_sText": "Hello"
-}
-```
+> *Arma Reforger currently lacks native persistence support.* RPF aims to solve that—providing an open, well-documented, and flexible foundation for long-form gameplay, just as **CBA** and **ACE** did for Arma 3.
+
+This framework empowers developers and server admins to:
+- Reduce setup time for persistent game modes
+- Eliminate progress loss and player frustration
+- Unlock dynamic, evolving campaigns
+- Collaborate on a shared technical standard
+
+---
+
+## ⚖️ License
+
+This project is licensed under the **MIT License**. You are free to use, modify, and distribute the framework in both personal and commercial Reforger servers and mods. Attribution to the base project is appreciated but not required.
+
+---
+
+## 📂 Acknowledgements
+
+- [Enfusion Database Framework (EDF)](https://github.com/Arkensor/EnfusionDatabaseFramework) – foundational backend layer
+- Bohemia Interactive – creators of the Enfusion engine and Arma Reforger
+
+---
+
+## 📬 Contributions Welcome
+
+Want to help expand RPF? Fork the repo, submit a pull request, or open an issue. Modular sub-systems and external save backends are especially welcome.
+
+---
+
+> ⚠️ This is an active work-in-progress. Expect commits and refactors as we build toward a stable 1.0.
